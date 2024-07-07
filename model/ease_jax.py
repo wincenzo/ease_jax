@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Self, Sequence
+from typing import Self, Sequence, Optional
 
 import jax.numpy as jnp
 import numpy as np
@@ -11,31 +11,37 @@ from sklearn.preprocessing import LabelEncoder, MaxAbsScaler
 
 
 class EASE:
-    def __init__(self, data: pd.DataFrame, implicit: bool = True) -> None:
+    def __init__(self,
+                 train: pd.DataFrame,
+                 user_col: str = "user_id",
+                 item_col: str = "item_id",
+                 score_col: Optional[str] = None
+                 ) -> None:
         self.user_enc = LabelEncoder()
         self.item_enc = LabelEncoder()
         self.values_enc = MaxAbsScaler()
 
-        self.implicit = implicit
+        self.implicit = not score_col
 
         self.users = self.user_enc.fit_transform(
-            data["user_id"].to_numpy())
+            train[user_col].to_numpy())
         self.items = self.item_enc.fit_transform(
-            data["item_id"].to_numpy())
+            train[item_col].to_numpy())
 
         values = (
-            np.ones(self.users.size, dtype=bool)  
+            np.ones(self.users.size, dtype=bool)  # type: ignore
             if self.implicit
-            else self.values_enc.fit_transform(data["rating"].to_numpy())
+            else self.values_enc.fit_transform(train[score_col].to_numpy())
         )
 
         self.n_items = self.item_enc.classes_.size
         self.n_users = self.user_enc.classes_.size
 
+        dtypes = bool if self.implicit else np.float32
         self.matrix = csr_matrix(
             (values, (self.users, self.items)),
             shape=(self.n_users, self.n_items),
-            dtype=np.float32,
+            dtype=dtypes,
         )
 
     @staticmethod
@@ -50,7 +56,8 @@ class EASE:
         return B
 
     def fit(self, lambda_: float = 0.5) -> None:
-        G = self.matrix.T.dot(self.matrix).toarray()
+        matrix = self.matrix.astype(np.float32)
+        G = matrix.T.dot(matrix).toarray()
         B = self._compute_B(G, lambda_)
         self.predictions = jnp.array(self.matrix.dot(B))
 
@@ -76,7 +83,7 @@ class EASE:
             self.user_enc.transform(users_pred), dtype=jnp.uint32)
         users_matrix = jnp.array(
             self.matrix[users_pred_idx].toarray(), dtype=jnp.bool)
-        
+
         self.top_k_scores, top_k_indices = self._predict(
             users_pred_idx, users_matrix)
         self.top_k_results = self.item_enc.inverse_transform(
