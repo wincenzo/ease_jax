@@ -63,7 +63,6 @@ class EASE:
 
     @partial(jit, static_argnums=(0,))
     def _predict(self, users_idx: Array, users_matrix: Array) -> tuple[Array, Array]:
-        # actual_mask = users_matrix.astype(jnp.bool)
         users_prediction = self.predictions[users_idx]
         vectorized_predict = vmap(
             self._predict_single_user, in_axes=(0, 0, None))
