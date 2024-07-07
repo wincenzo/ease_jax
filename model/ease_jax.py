@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Self, Sequence, Optional
+from typing import Optional, Self, Sequence
 
 import jax.numpy as jnp
 import numpy as np
