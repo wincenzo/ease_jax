@@ -24,7 +24,7 @@ class EASE:
             data["item_id"].to_numpy())
 
         values = (
-            np.ones(self.users.size, dtype=bool)  # type: ignore
+            np.ones(self.users.size, dtype=bool)  
             if self.implicit
             else self.values_enc.fit_transform(data["rating"].to_numpy())
         )
