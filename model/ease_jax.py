@@ -96,7 +96,7 @@ class EASE:
             {
                 "user_id": np.repeat(self.users_pred, self.k),
                 "item_id": self.top_k_results,
-                "score": self.top_k_scores.ravel(),
+                "score": device_get(self.top_k_scores).ravel(),
             }
         )
 
