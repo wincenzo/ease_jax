@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Self, Sequence
+from typing import Optional, Self, Sequence, Any
 
 import jax.numpy as jnp
 import numpy as np
@@ -38,7 +38,7 @@ class EASE:
         self.n_users = self.user_enc.classes_.size
 
         dtypes = bool if self.implicit else np.float32
-        self.matrix = csr_matrix(
+        self.user_item = csr_matrix(
             (values, (self.users, self.items)),
             shape=(self.n_users, self.n_items),
             dtype=dtypes,
@@ -54,12 +54,12 @@ class EASE:
         B = B.at[diag_indices].set(0)
 
         return B
-
+    
     def fit(self, lambda_: float = 0.5) -> None:
-        matrix = self.matrix.astype(np.float32)
-        G = matrix.T.dot(matrix).toarray()
+        user_item = self.user_item.astype(np.float32)
+        G = user_item.T.dot(user_item).toarray()
         B = self._compute_B(G, lambda_)
-        self.predictions = jnp.array(self.matrix.dot(B))
+        self.predictions = jnp.asarray(self.user_item.dot(B))
 
     @staticmethod
     @partial(jit, static_argnums=(2,))
@@ -69,23 +69,23 @@ class EASE:
         return lax.top_k(candidates, k)
 
     @partial(jit, static_argnums=(0,))
-    def _predict(self, users_idx: Array, users_matrix: Array) -> tuple[Array, Array]:
+    def _predict(self, users_idx: Array, users_user_item: Array) -> tuple[Array, Array]:
         users_prediction = self.predictions[users_idx]
         vectorized_predict = vmap(
             self._predict_single_user, in_axes=(0, 0, None))
 
-        return vectorized_predict(users_prediction, users_matrix, self.k)
+        return vectorized_predict(users_prediction, users_user_item, self.k)
 
     def predict(self, users_pred: Sequence, k: int) -> Self:
         self.k = k
         self.users_pred = users_pred
-        users_pred_idx = jnp.array(
+        users_pred_idx = jnp.asarray(
             self.user_enc.transform(users_pred), dtype=jnp.uint32)
-        users_matrix = jnp.array(
-            self.matrix[users_pred_idx].toarray(), dtype=jnp.bool)
+        users_user_item = jnp.asarray(
+            self.user_item[users_pred_idx].toarray(), dtype=jnp.bool)
 
         self.top_k_scores, top_k_indices = self._predict(
-            users_pred_idx, users_matrix)
+            users_pred_idx, users_user_item)
         self.top_k_results = self.item_enc.inverse_transform(
             device_get(top_k_indices).ravel())
 
@@ -101,3 +101,6 @@ class EASE:
         )
 
         return results
+
+
+
