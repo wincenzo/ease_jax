@@ -71,15 +71,17 @@ class EASE:
 
         return lax.top_k(candidates, k)
 
-    @partial(jit, static_argnums=(0,))
-    def _predict(self, users_idx: Array,
+    @partial(jit, static_argnums=(0, 3))
+    def _predict(self,
+                 users_idx: Array,
                  users_user_item: Array,
+                 k: int,
                  ) -> tuple[Array, Array]:
         users_prediction = self.predictions[users_idx]
         vectorized_predict = vmap(
             self._predict_single_user, in_axes=(0, 0, None))
 
-        return vectorized_predict(users_prediction, users_user_item, self.k)
+        return vectorized_predict(users_prediction, users_user_item, k)
 
     def predict(self, users_pred: Sequence, k: int) -> Self:
         self.k = k
@@ -90,7 +92,7 @@ class EASE:
             self.user_item[users_pred_idx].toarray(), dtype=jnp.bool)
 
         self.top_k_scores, top_k_indices = self._predict(
-            users_pred_idx, user_item_pred)
+            users_pred_idx, user_item_pred, k)
         self.top_k_results = self.item_enc.inverse_transform(
             device_get(top_k_indices).ravel())
 
