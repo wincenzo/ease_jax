@@ -1,7 +1,6 @@
 from functools import partial
 from typing import Optional, Self, Sequence
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
