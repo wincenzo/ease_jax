@@ -1,4 +1,4 @@
-# PER USER POST PREDICTIONS CALCULATION
+########### PER USER POST PREDICTIONS CALCULATION
 
 from functools import partial
 from typing import Optional, Self, Sequence
@@ -91,7 +91,6 @@ class EASE:
 
         ui = jnp.asarray(self.user_item[user_idx].toarray())
         mask = jnp.asarray(ui, dtype=bool)
-
         self.top_k_scores, top_k_idx = self._batch_predict(
             ui, self.B, mask, k)
 
@@ -108,8 +107,8 @@ class EASE:
                 "score": device_get(self.top_k_scores).ravel(),
             }
         )
-
-# FULL PREDICTIONS PRE-CALCULATION
+    
+############# FULL PREDICTIONS PRE-CALCULATION
 
 # from functools import partial
 # from typing import Optional, Self, Sequence
@@ -225,3 +224,6 @@ class EASE:
 #                 "score": device_get(self.top_k_scores).ravel(),
 #             }
 #         )
+
+
+
