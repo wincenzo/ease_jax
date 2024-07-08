@@ -1,11 +1,12 @@
 from functools import partial
 from typing import Optional, Self, Sequence
 
+import jax
 import jax.numpy as jnp
-import jax.scipy as jsp
 import numpy as np
 import pandas as pd
 from jax import Array, device_get, jit, lax, vmap
+from jax.scipy import linalg
 from scipy.sparse import csr_matrix
 from sklearn.preprocessing import LabelEncoder, MaxAbsScaler
 
@@ -44,11 +45,11 @@ class EASE:
         )
 
     @staticmethod
-    @jit
+    @partial(jit, static_argnums=(1,))
     def _compute_B(G: Array, lambda_: float) -> Array:
         diag_indices = jnp.diag_indices(G.shape[0])
         G = G.at[diag_indices].add(lambda_)
-        P = jsp.linalg.solve(G, jnp.eye(G.shape[0]))
+        P = linalg.solve(G, jnp.eye(G.shape[0]))
         B = P / (-jnp.diag(P))[:, None]
         B = B.at[diag_indices].set(0)
 
