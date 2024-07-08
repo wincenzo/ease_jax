@@ -87,8 +87,7 @@ class EASE:
     def predict(self, users_pred: Sequence, k: int) -> Self:
         self.k = k
         self.users_pred = users_pred
-        users_pred_idx = jnp.asarray(
-            self.user_enc.transform(users_pred), dtype=jnp.uint32)
+        users_pred_idx = jnp.asarray(self.user_enc.transform(users_pred))
         user_item_pred = jnp.asarray(
             self.user_item[users_pred_idx].toarray(), dtype=jnp.bool)
 
