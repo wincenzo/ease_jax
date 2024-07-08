@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 from jax import Array, device_get, jit, lax, vmap
-from jax.scipy import linalg
+from jax.scipy.linalg import cho_factor, cho_solve
 from scipy.sparse import csr_matrix
 from sklearn.preprocessing import LabelEncoder, MaxAbsScaler
 
@@ -44,11 +44,12 @@ class EASE:
         )
 
     @staticmethod
-    @partial(jit, static_argnums=(1,))
+    @jit
     def _compute_B(G: Array, lambda_: float) -> Array:
         diag_indices = jnp.diag_indices(G.shape[0])
         G = G.at[diag_indices].add(lambda_)
-        P = linalg.solve(G, jnp.eye(G.shape[0]))
+        c, lower = cho_factor(G)
+        P = cho_solve((c, lower), jnp.eye(G.shape[0]))
         B = P / (-jnp.diag(P))[:, None]
         B = B.at[diag_indices].set(0)
 
