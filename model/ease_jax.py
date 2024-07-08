@@ -37,7 +37,7 @@ class EASE:
         self.n_users = self.user_enc.classes_.size
 
         dtypes = bool if self.implicit else np.float32
-        self.user_item = csr_matrix(
+        self.user_item_matrix = csr_matrix(
             (values, (self.users, self.items)),
             shape=(self.n_users, self.n_items),
             dtype=dtypes,
@@ -46,63 +46,70 @@ class EASE:
     @staticmethod
     @jit
     def _compute_B(G: Array, lambda_: float) -> Array:
-        diag_indices = jnp.diag_indices(G.shape[0])
-        G = G.at[diag_indices].add(lambda_)
+        diag_idxs = jnp.diag_indices(G.shape[0])
+        G = G.at[diag_idxs].add(lambda_)
         c, lower = cho_factor(G)
         P = cho_solve((c, lower), jnp.eye(G.shape[0]))
         B = P / (-jnp.diag(P))[:, None]
-        B = B.at[diag_indices].set(0)
+        B = B.at[diag_idxs].set(0)
 
         return B
 
     def fit(self, lambda_: float = 0.5) -> None:
-        user_item = self.user_item.astype(np.float32)
-        G = user_item.T.dot(user_item).toarray()
-        G = jnp.asarray(G)
+        user_item = self.user_item_matrix.astype(np.float32)
+        G = user_item.T.dot(user_item)
+        G = jnp.asarray(G.toarray())
         B = self._compute_B(G, lambda_)
-        self.predictions = jnp.asarray(self.user_item.dot(B))
+        self.predictions = jnp.asarray(self.user_item_matrix.dot(B))
 
     @staticmethod
     @partial(jit, static_argnums=(2,))
-    def _predict_single_user(user_prediction: Array,
-                             user_mask: Array,
-                             k: int,
+    def _predict_single_user(user_predictions: Array,
+                             user_interactions: Array,
+                             top_k: int,
                              ) -> tuple[Array, Array]:
-        candidates = jnp.where(user_mask, -jnp.inf, user_prediction)
+        candidate_scores = jnp.where(
+            user_interactions, -jnp.inf, user_predictions)
 
-        return lax.top_k(candidates, k)
+        return lax.top_k(candidate_scores, top_k)
 
     @partial(jit, static_argnums=(0, 3))
-    def _predict(self,
-                 users_idx: Array,
-                 users_user_item: Array,
-                 k: int,
-                 ) -> tuple[Array, Array]:
-        users_prediction = self.predictions[users_idx]
+    def _predict_batch(self,
+                       user_idxs: Array,
+                       user_item_matrix: Array,
+                       top_k: int,
+                       ) -> tuple[Array, Array]:
+        user_predictions = self.predictions[user_idxs]
         vectorized_predict = vmap(
             self._predict_single_user, in_axes=(0, 0, None))
 
-        return vectorized_predict(users_prediction, users_user_item, k)
+        return vectorized_predict(
+            user_predictions,
+            user_item_matrix,
+            top_k,
+        )
 
-    def predict(self, users_pred: Sequence, k: int) -> Self:
-        self.k = k
-        self.users_pred = users_pred
-        users_pred_idx = jnp.asarray(self.user_enc.transform(users_pred))
-        user_item_pred = jnp.asarray(
-            self.user_item[users_pred_idx].toarray(), dtype=jnp.bool)
+    def predict(self, target_users: Sequence, top_k: int) -> Self:
+        self.top_k = top_k
+        self.target_users = target_users
+        target_user_idxs = jnp.asarray(self.user_enc.transform(target_users))
+        target_user_item_matrix = jnp.asarray(
+            self.user_item_matrix[target_user_idxs].toarray(), dtype=jnp.bool)
 
-        self.top_k_scores, top_k_indices = self._predict(
-            users_pred_idx, user_item_pred, k)
-        self.top_k_results = self.item_enc.inverse_transform(
-            device_get(top_k_indices).ravel())
+        self.top_k_scores, top_k_item_idxs = self._predict_batch(
+            target_user_idxs,
+            target_user_item_matrix,
+            top_k)
+        self.top_k_items = self.item_enc.inverse_transform(
+            device_get(top_k_item_idxs).ravel())
 
         return self
 
     def to_dataframe(self) -> pd.DataFrame:
         results = pd.DataFrame(
             {
-                "user_id": np.repeat(self.users_pred, self.k),
-                "item_id": self.top_k_results,
+                "user_id": np.repeat(self.target_users, self.top_k),
+                "item_id": self.top_k_items,
                 "score": device_get(self.top_k_scores).ravel(),
             }
         )
