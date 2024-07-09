@@ -71,7 +71,7 @@ class EASE:
         self.users_pred = users
 
         users_idxs = self.user_enc.transform(users)
-        ui_pred = jnp.asarray(self.user_item[users_idxs].toarray())
+        ui_pred = jnp.asarray(self.user_item[users_idxs, :].toarray())
         self.top_k_scores, top_k_idx = self._top_k(ui_pred, self.B, k)
         self.top_k_items = self.item_enc.inverse_transform(
             device_get(top_k_idx).ravel())
