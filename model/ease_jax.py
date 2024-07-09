@@ -42,6 +42,12 @@ class EASE:
     @staticmethod
     @jit
     def _compute_B(G: Array, l2: float) -> Array:
+        '''
+        G: Gram matrix
+        P: Inverse gram matrix
+        B: Weights matrix
+        l2: regularization 
+        '''
         diag_idx = jnp.diag_indices(G.shape[0])
         G = G.at[diag_idx].add(l2)
         c, lower = cho_factor(G)
