@@ -3,6 +3,7 @@ from typing import Optional, Self, Sequence
 
 import jax.numpy as jnp
 import numpy as np
+from numpy.typing import ArrayLike
 import pandas as pd
 from jax import Array, device_get, jit, lax
 from jax.scipy.linalg import cho_factor, cho_solve
@@ -12,26 +13,25 @@ from sklearn.preprocessing import LabelEncoder, MaxAbsScaler
 
 class EASE:
     def __init__(self,
-                 data: pd.DataFrame,
-                 user_col: str = "user_id",
-                 item_col: str = "item_id",
-                 rating_col: Optional[str] = None
+                 users: ArrayLike,
+                 items: ArrayLike,
+                 scores: Optional[ArrayLike] = None
                  ) -> None:
+        scores = scores or []
         self.user_enc = LabelEncoder()
         self.item_enc = LabelEncoder()
         self.rating_scaler = MaxAbsScaler()
-        self.implicit = not rating_col
+        self.implicit = not scores
 
-        self.users = self.user_enc.fit_transform(data[user_col].to_numpy())
-        self.items = self.item_enc.fit_transform(data[item_col].to_numpy())
+        self.users = self.user_enc.fit_transform(users)
+        self.items = self.item_enc.fit_transform(items)
         self.n_users = self.user_enc.classes_.size
         self.n_items = self.item_enc.classes_.size
 
         values = (
-            jnp.ones(self.users.size, dtype=bool)  # type: ignore
+            np.ones(self.users.size, dtype=bool)  # type: ignore
             if self.implicit
-            else jnp.asarray(self.rating_scaler.fit_transform(
-                data[rating_col].to_numpy()), dtype=jnp.float32)
+            else self.rating_scaler.fit_transform(scores)  # type: ignore
         )
 
         self.user_item = csr_matrix(
@@ -68,11 +68,11 @@ class EASE:
 
     def predict(self, users: Sequence, k: int) -> Self:
         self.k = k
-        self.users_pred = users
+        self.users = users
 
         users_idxs = self.user_enc.transform(users)
-        ui_pred = jnp.asarray(self.user_item[users_idxs, :].toarray())
-        self.top_k_scores, top_k_idx = self._top_k(ui_pred, self.B, k)
+        ui = jnp.asarray(self.user_item[users_idxs, :].toarray())
+        self.top_k_scores, top_k_idx = self._top_k(ui, self.B, k)
         self.top_k_items = self.item_enc.inverse_transform(
             device_get(top_k_idx).ravel())
 
@@ -81,7 +81,7 @@ class EASE:
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame(
             {
-                "user_id": np.repeat(self.users_pred, self.k),
+                "user_id": np.repeat(self.users, self.k),
                 "item_id": self.top_k_items,
                 "score": device_get(self.top_k_scores).ravel(),
             }
