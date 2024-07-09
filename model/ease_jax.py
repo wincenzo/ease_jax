@@ -20,7 +20,7 @@ class EASE:
         scores = scores or []
         self.user_enc = LabelEncoder()
         self.item_enc = LabelEncoder()
-        self.rating_scaler = MaxAbsScaler()
+        self.score_sc = MaxAbsScaler()
         self.implicit = not scores
 
         self.users = self.user_enc.fit_transform(users)
@@ -31,7 +31,7 @@ class EASE:
         values = (
             np.ones(self.users.size, dtype=bool)  # type: ignore
             if self.implicit
-            else self.rating_scaler.fit_transform(scores)  # type: ignore
+            else self.score_sc.fit_transform(scores)  # type: ignore
         )
 
         self.user_item = csr_matrix(
