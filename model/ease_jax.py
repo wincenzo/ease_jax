@@ -8,7 +8,7 @@ import pandas as pd
 from jax import Array, device_get, jit, lax
 from jax.scipy.linalg import cho_factor, cho_solve
 from scipy.sparse import csr_matrix
-from sklearn.preprocessing import LabelEncoder, MaxAbsScaler
+from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 
 class EASE:
@@ -20,7 +20,6 @@ class EASE:
         scores = scores or []
         self.user_enc = LabelEncoder()
         self.item_enc = LabelEncoder()
-        self.score_sc = MaxAbsScaler()
         self.implicit = not scores
 
         self.users = self.user_enc.fit_transform(users)
@@ -30,8 +29,8 @@ class EASE:
 
         values = (
             np.ones(self.users.size, dtype=bool)  # type: ignore
-            if self.implicit
-            else self.score_sc.fit_transform(scores)  # type: ignore
+            if self.implicit 
+            else maxabs_scale(scores)
         )
 
         self.user_item = csr_matrix(
