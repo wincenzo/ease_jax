@@ -57,7 +57,7 @@ class EASE:
         self.B = self._compute_B(G, l2)
 
     @staticmethod
-    @partial(jit, static_argnums=(2,))
+    @partial(jit, static_argnames=['k'])
     def _top_k(ui: Array, B: Array, k) -> tuple[Array, Array]:
         predictions = ui @ B
         mask = ui.astype(bool)
