@@ -45,7 +45,7 @@ class EASE:
         '''
         G: Gram matrix
         P: Inverse gram matrix
-        B: Weights matrix
+        B: Weights matrix (with diag(B) = 0)
         l2: regularization 
         '''
         diag_idx = jnp.diag_indices(G.shape[0])
