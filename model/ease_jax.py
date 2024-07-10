@@ -1,13 +1,13 @@
 from functools import partial
-from typing import Optional, Self, Sequence
+from typing import Optional, Self
 
 import jax.numpy as jnp
 import numpy as np
-from numpy.typing import ArrayLike
 import pandas as pd
 from jax import Array, device_get, jit, lax
 from jax.scipy.linalg import cho_factor, cho_solve
-from scipy.sparse import csr_matrix
+from numpy.typing import ArrayLike
+from scipy.sparse import csr_array, csr_matrix
 from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 
@@ -21,19 +21,16 @@ class EASE:
         self.user_enc = LabelEncoder()
         self.item_enc = LabelEncoder()
         self.implicit = not scores
-
         self.users = self.user_enc.fit_transform(users)
         self.items = self.item_enc.fit_transform(items)
         self.n_users = self.user_enc.classes_.size
         self.n_items = self.item_enc.classes_.size
-
         values = (
             np.ones(self.users.size, dtype=bool)  # type: ignore
-            if self.implicit 
+            if self.implicit
             else maxabs_scale(scores)
         )
-
-        self.user_item = csr_matrix(
+        self.user_item = csr_array(
             (values, (self.users, self.items)),
             shape=(self.n_users, self.n_items),
             dtype=np.float32,
@@ -66,17 +63,16 @@ class EASE:
     def _top_k(ui: Array, B: Array, k) -> tuple[Array, Array]:
         predictions = ui @ B
         mask = ui.astype(bool)
-        filtered = jnp.where(mask, -jnp.inf, predictions)
+        predictions = jnp.where(mask, -jnp.inf, predictions)
 
-        return lax.top_k(filtered, k)
-        # return lax.approx_max_k(filtered, k)
+        return lax.top_k(predictions, k)
+        # return lax.approx_max_k(predictions, k)
 
     def predict(self, users: ArrayLike, k: int) -> Self:
         self.k = k
         self.users = users
-
-        users_idxs = self.user_enc.transform(users)
-        ui = jnp.asarray(self.user_item[users_idxs, :].toarray())
+        users_idx = self.user_enc.transform(users)
+        ui = jnp.asarray(self.user_item[users_idx, :].toarray())
         self.top_k_scores, top_k_idx = self._top_k(ui, self.B, k)
         self.top_k_items = self.item_enc.inverse_transform(
             device_get(top_k_idx).ravel())
