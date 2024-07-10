@@ -52,7 +52,7 @@ class EASE:
         G = G.at[diag_idx].add(l2)
         c, lower = cho_factor(G)
         P = cho_solve((c, lower), jnp.eye(G.shape[0]))
-        B = P / (-jnp.diag(P))[:, None]
+        B = P / (-jnp.diag(P)[:, None])
 
         return B.at[diag_idx].set(0)
 
@@ -68,10 +68,10 @@ class EASE:
         mask = ui.astype(bool)
         filtered = jnp.where(mask, -jnp.inf, predictions)
 
-        # return lax.top_k(filtered, k)
-        return lax.approx_max_k(filtered, k)
+        return lax.top_k(filtered, k)
+        # return lax.approx_max_k(filtered, k)
 
-    def predict(self, users: Sequence, k: int) -> Self:
+    def predict(self, users: ArrayLike, k: int) -> Self:
         self.k = k
         self.users = users
 
