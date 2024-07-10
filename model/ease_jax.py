@@ -7,7 +7,7 @@ import pandas as pd
 from jax import Array, device_get, jit, lax
 from jax.scipy.linalg import cho_factor, cho_solve
 from numpy.typing import ArrayLike
-from scipy.sparse import csr_array, csr_matrix
+from scipy.sparse import csr_array
 from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 
