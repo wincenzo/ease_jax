@@ -58,10 +58,8 @@ class EASE:
         top_k_scores = np.take_along_axis(predictions, top_k_idx, axis=1)
 
         sorted_idx = np.argsort(top_k_scores, axis=1)[:, ::-1]
-        sorted_scores = np.take_along_axis(
-            top_k_scores, sorted_idx, axis=1)
-        sorted_idx = np.take_along_axis(
-            top_k_idx, sorted_idx, axis=1)
+        sorted_scores = np.take_along_axis(top_k_scores, sorted_idx, axis=1)
+        sorted_idx = np.take_along_axis(top_k_idx, sorted_idx, axis=1)
         
         return sorted_scores, sorted_idx
 
