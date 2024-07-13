@@ -72,13 +72,6 @@ class EASE:
 
         return self
 
-    def to_array(self) -> np.ndarray:
-        return np.column_stack((
-            np.repeat(self.users, self.k),
-            self.top_k_items,
-            self.top_k_scores.ravel()
-        ))
-
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame({
             "user_id": np.repeat(self.users, self.k),
