@@ -59,7 +59,7 @@ class EASE:
         sorted_idx = np.argsort(top_k_scores, axis=1)[:, ::-1]
         sorted_scores = np.take_along_axis(top_k_scores, sorted_idx, axis=1)
         sorted_idx = np.take_along_axis(top_k_idx, sorted_idx, axis=1)
-        
+
         return sorted_scores, sorted_idx
 
     def predict(self, users: ArrayLike, k: int) -> Self:
@@ -72,11 +72,16 @@ class EASE:
 
         return self
 
+    def to_array(self) -> np.ndarray:
+        return np.column_stack((
+            np.repeat(self.users, self.k),
+            self.top_k_items,
+            self.top_k_scores.ravel()
+        ))
+
     def to_dataframe(self) -> pd.DataFrame:
-        return pd.DataFrame(
-            {
-                "user_id": np.repeat(self.users, self.k),
-                "item_id": self.top_k_items,
-                "score": self.top_k_scores.ravel(),
-            }
-        )
+        return pd.DataFrame({
+            "user_id": np.repeat(self.users, self.k),
+            "item_id": self.top_k_items,
+            "score": self.top_k_scores.ravel(),
+        })

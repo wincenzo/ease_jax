@@ -13,8 +13,8 @@ from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 class EASE:
     def __init__(self,
-                 users: ArrayLike,
-                 items: ArrayLike,
+                 users: ArrayLike | list,
+                 items: ArrayLike | list,
                  scores: Optional[ArrayLike] = None
                  ) -> None:
         scores = scores or []
@@ -68,7 +68,7 @@ class EASE:
         return lax.top_k(predictions, k)
         # return lax.approx_max_k(predictions, k)
 
-    def predict(self, users: ArrayLike, k: int) -> Self:
+    def predict(self, users: ArrayLike | list, k: int) -> Self:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)
@@ -79,11 +79,16 @@ class EASE:
 
         return self
 
+    def to_array(self) -> np.ndarray:
+        return np.column_stack((
+            np.repeat(self.users, self.k),
+            self.top_k_items,
+            device_get(self.top_k_scores).ravel()
+        ))
+
     def to_dataframe(self) -> pd.DataFrame:
-        return pd.DataFrame(
-            {
-                "user_id": np.repeat(self.users, self.k),
-                "item_id": self.top_k_items,
-                "score": device_get(self.top_k_scores).ravel(),
-            }
-        )
+        return pd.DataFrame({
+            "user_id": np.repeat(self.users, self.k),
+            "item_id": self.top_k_items,
+            "score": device_get(self.top_k_scores).ravel(),
+        })
