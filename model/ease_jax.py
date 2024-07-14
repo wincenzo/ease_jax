@@ -15,7 +15,7 @@ class EASE:
     def __init__(self,
                  users: Sequence,
                  items: Sequence,
-                 scores: Optional[ArrayLike] = None
+                 scores: Optional[Sequence] = None
                  ) -> None:
         scores = scores or []
         self.user_enc = LabelEncoder()
