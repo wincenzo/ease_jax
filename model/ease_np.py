@@ -2,6 +2,7 @@ from typing import Optional, Self, Sequence
 
 import numpy as np
 import pandas as pd
+from numpy.typing import ArrayLike
 from scipy.linalg import cho_factor, cho_solve
 from scipy.sparse import csr_array
 from sklearn.preprocessing import LabelEncoder, maxabs_scale
@@ -9,9 +10,9 @@ from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 class EASE:
     def __init__(self,
-                 users: Sequence,
-                 items: Sequence,
-                 scores: Optional[Sequence] = None
+                 users: ArrayLike,
+                 items: ArrayLike,
+                 scores: Optional[ArrayLike] = None
                  ) -> None:
         scores = scores or []
         self.user_enc = LabelEncoder()
@@ -61,7 +62,7 @@ class EASE:
 
         return sorted_scores, sorted_idx
 
-    def predict(self, users: Sequence, k: int) -> Self:
+    def predict(self, users: ArrayLike, k: int) -> Self:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)

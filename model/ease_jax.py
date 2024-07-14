@@ -13,9 +13,9 @@ from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 class EASE:
     def __init__(self,
-                 users: Sequence,
-                 items: Sequence,
-                 scores: Optional[Sequence] = None
+                 users: ArrayLike,
+                 items: ArrayLike,
+                 scores: Optional[ArrayLike] = None
                  ) -> None:
         scores = scores or []
         self.user_enc = LabelEncoder()
@@ -68,7 +68,7 @@ class EASE:
         return lax.top_k(predictions, k)
         # return lax.approx_max_k(predictions, k)
 
-    def predict(self, users: Sequence, k: int) -> Self:
+    def predict(self, users: ArrayLike, k: int) -> Self:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)
