@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Self
+from typing import Optional, Self, Sequence
 
 import jax.numpy as jnp
 import numpy as np
@@ -13,8 +13,8 @@ from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 class EASE:
     def __init__(self,
-                 users: ArrayLike | list,
-                 items: ArrayLike | list,
+                 users: Sequence,
+                 items: Sequence,
                  scores: Optional[ArrayLike] = None
                  ) -> None:
         scores = scores or []
@@ -68,7 +68,7 @@ class EASE:
         return lax.top_k(predictions, k)
         # return lax.approx_max_k(predictions, k)
 
-    def predict(self, users: ArrayLike | list, k: int) -> Self:
+    def predict(self, users: Sequence, k: int) -> Self:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)
