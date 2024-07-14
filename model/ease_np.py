@@ -1,5 +1,4 @@
-from typing import Optional, Self, Sequence
-
+from typing import Optional, Self
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
