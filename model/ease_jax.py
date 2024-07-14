@@ -6,16 +6,15 @@ import numpy as np
 import pandas as pd
 from jax import Array, device_get, jit, lax
 from jax.scipy.linalg import cho_factor, cho_solve
-from numpy.typing import ArrayLike
 from scipy.sparse import csr_array
 from sklearn.preprocessing import LabelEncoder, maxabs_scale
 
 
 class EASE:
     def __init__(self,
-                 users: ArrayLike,
-                 items: ArrayLike,
-                 scores: Optional[ArrayLike] = None
+                 users: list,
+                 items: list,
+                 scores: Optional[list] = None
                  ) -> None:
         scores = scores or []
         self.user_enc = LabelEncoder()
@@ -68,7 +67,7 @@ class EASE:
         return lax.top_k(predictions, k)
         # return lax.approx_max_k(predictions, k)
 
-    def predict(self, users: ArrayLike, k: int) -> Self:
+    def predict(self, users: list, k: int) -> Self:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)
