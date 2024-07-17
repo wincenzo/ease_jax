@@ -55,7 +55,7 @@ class EASE:
 
     def fit(self, l2: float = 0.5) -> None:
         G = self.user_item.T @ self.user_item
-        G = jnp.asarray(G.toarray())
+        G = jnp.asarray(G.toarray(), dtype=np.float32)
         self.B = self._compute_B(G, l2)
 
     @staticmethod
@@ -72,7 +72,7 @@ class EASE:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)
-        ui = jnp.asarray(self.user_item[users_idx, :].toarray())
+        ui = jnp.asarray(self.user_item[users_idx, :].toarray(), dtype=np.float32)
         self.top_k_scores, top_k_idx = self._top_k(ui, self.B, k)
         self.top_k_items = self.item_enc.inverse_transform(
             device_get(top_k_idx).ravel())
