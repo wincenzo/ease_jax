@@ -21,13 +21,13 @@ class EASE:
         self.items = self.item_enc.fit_transform(items)
         self.n_users = self.user_enc.classes_.size
         self.n_items = self.item_enc.classes_.size
-        values = (
+        self.values = (
             np.ones(self.users.size, dtype=bool)  # type: ignore
             if self.implicit
             else maxabs_scale(scores)
         )
         self.user_item = csr_array(
-            (values, (self.users, self.items)),
+            (self.values, (self.users, self.items)),
             shape=(self.n_users, self.n_items),
             dtype=np.float32,
         )
