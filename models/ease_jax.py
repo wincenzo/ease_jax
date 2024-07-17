@@ -86,8 +86,8 @@ class EASE:
             "score": device_get(self.top_k_scores).ravel(),
         })
 
-    def to_numpy(self) -> Array:
-        return jnp.column_stack((
+    def to_numpy(self) -> np.ndarray:
+        return np.column_stack((
             np.repeat(self.users, self.k),
             self.top_k_items,
             device_get(self.top_k_scores).ravel()
