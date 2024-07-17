@@ -77,3 +77,10 @@ class EASE:
             "item_id": self.top_k_items,
             "score": self.top_k_scores.ravel(),
         })
+
+    def to_numpy(self) -> np.ndarray:
+        return np.column_stack((
+            np.repeat(self.users, self.k),
+            self.top_k_items,
+            self.top_k_scores.ravel()
+        ))
