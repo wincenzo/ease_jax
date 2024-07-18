@@ -68,11 +68,12 @@ class EASE:
         return lax.top_k(predictions, k)
         # return lax.approx_max_k(predictions, k)
 
-    def predict(self, users: list | ArrayLike, k: int) -> Self:
+    def predict(self, users: list | ArrayLike, k: int = 15) -> Self:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)
-        ui = jnp.asarray(self.user_item[users_idx, :].toarray(), dtype=np.float32)
+        ui = jnp.asarray(
+            self.user_item[users_idx, :].toarray(), dtype=np.float32)
         self.top_k_scores, top_k_idx = self._top_k(ui, self.B, k)
         self.top_k_items = self.item_enc.inverse_transform(
             device_get(top_k_idx).ravel())

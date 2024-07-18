@@ -61,7 +61,7 @@ class EASE:
 
         return sorted_scores, sorted_idx
 
-    def predict(self, users: list, k: int) -> Self:
+    def predict(self, users: list, k: int = 15) -> Self:
         self.k = k
         self.users = users
         users_idx = self.user_enc.transform(users)
