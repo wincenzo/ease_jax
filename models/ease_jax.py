@@ -21,18 +21,18 @@ class EASE:
         self.user_enc = LabelEncoder()
         self.item_enc = LabelEncoder()
         self.implicit = not scores
-        self.users = self.user_enc.fit_transform(users)
-        self.items = self.item_enc.fit_transform(items)
-        self.n_users = self.user_enc.classes_.size
-        self.n_items = self.item_enc.classes_.size
+        self.users_idx = self.user_enc.fit_transform(users)
+        self.items_idx = self.item_enc.fit_transform(items)
+        n_users = self.user_enc.classes_.size
+        n_items = self.item_enc.classes_.size
         self.values = (
-            np.ones(self.users.size, dtype=bool)  # type: ignore
+            np.ones(self.users_idx.size, dtype=bool)  # type: ignore
             if self.implicit
             else maxabs_scale(scores)
         )
         self.user_item = csr_array(
-            (self.values, (self.users, self.items)),
-            shape=(self.n_users, self.n_items),
+            (self.values, (self.users_idx, self.items_idx)),
+            shape=(n_users, n_items),
             dtype=np.float32,
         )
 
