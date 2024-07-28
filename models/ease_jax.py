@@ -60,7 +60,7 @@ class EASE:
 
     @staticmethod
     @partial(jit, static_argnames=['k'])
-    def _top_k(ui: Array, B: Array, k) -> tuple[Array, Array]:
+    def _top_k(ui: Array, B: Array, k:int) -> tuple[Array, Array]:
         predictions = ui @ B
         mask = ui.astype(bool)
         predictions = jnp.where(mask, -jnp.inf, predictions)
